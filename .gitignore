@@ -1,0 +1,10 @@
+bin
+.coverage*
+experiments/
+vendor
+#: dev dirs and files
+/*.code-workspace
+/.codex
+/.ai
+/.cspell
+/.vscode
