@@ -38,8 +38,7 @@ func run(ctx context.Context, helperPath string, input []byte) processResult {
 	if err == nil {
 		return processResult{output: output.Bytes(), exitCode: 0}
 	}
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
+	if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 		return processResult{output: output.Bytes(), exitCode: exitErr.ExitCode()}
 	}
 	return processResult{output: output.Bytes(), exitCode: -1, err: err}

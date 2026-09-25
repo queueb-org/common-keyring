@@ -17,7 +17,7 @@ type testBusObject struct {
 	path       godbus.ObjectPath
 }
 
-func (o *testBusObject) Call(method string, flags godbus.Flags, args ...interface{}) *godbus.Call {
+func (o *testBusObject) Call(method string, flags godbus.Flags, args ...any) *godbus.Call {
 	return o.CallWithContext(context.Background(), method, flags, args...)
 }
 
@@ -25,12 +25,12 @@ func (o *testBusObject) CallWithContext(
 	ctx context.Context,
 	method string,
 	_ godbus.Flags,
-	args ...interface{},
+	args ...any,
 ) *godbus.Call {
 	return o.connection.call(ctx, o.path, method, args...)
 }
 
-func (o *testBusObject) Go(method string, flags godbus.Flags, ch chan *godbus.Call, args ...interface{}) *godbus.Call {
+func (o *testBusObject) Go(method string, flags godbus.Flags, ch chan *godbus.Call, args ...any) *godbus.Call {
 	call := o.Call(method, flags, args...)
 	ch <- call
 	return call
@@ -41,7 +41,7 @@ func (o *testBusObject) GoWithContext(
 	method string,
 	flags godbus.Flags,
 	ch chan *godbus.Call,
-	args ...interface{},
+	args ...any,
 ) *godbus.Call {
 	call := o.CallWithContext(ctx, method, flags, args...)
 	ch <- call
@@ -57,13 +57,13 @@ func (o *testBusObject) RemoveMatchSignal(string, string, ...godbus.MatchOption)
 }
 
 func (*testBusObject) GetProperty(string) (godbus.Variant, error) { return godbus.Variant{}, nil }
-func (*testBusObject) StoreProperty(string, interface{}) error    { return nil }
-func (*testBusObject) SetProperty(string, interface{}) error      { return nil }
+func (*testBusObject) StoreProperty(string, any) error            { return nil }
+func (*testBusObject) SetProperty(string, any) error              { return nil }
 func (*testBusObject) Destination() string                        { return serviceName }
 func (o *testBusObject) Path() godbus.ObjectPath                  { return o.path }
 
 type testConnection struct {
-	callOverride   func(context.Context, godbus.ObjectPath, string, ...interface{}) *godbus.Call
+	callOverride   func(context.Context, godbus.ObjectPath, string, ...any) *godbus.Call
 	callErrors     map[string]error
 	callErrorAt    map[string]int
 	callCounts     map[string]int
@@ -128,7 +128,7 @@ func (c *testConnection) call(
 	ctx context.Context,
 	path godbus.ObjectPath,
 	method string,
-	args ...interface{},
+	args ...any,
 ) *godbus.Call {
 	if c.callOverride != nil {
 		return c.callOverride(ctx, path, method, args...)
@@ -142,19 +142,19 @@ func (c *testConnection) call(
 	}
 	switch method {
 	case serviceInterface + ".Unlock":
-		return &godbus.Call{Body: []interface{}{c.unlockedPaths, c.promptPaths[method]}}
+		return &godbus.Call{Body: []any{c.unlockedPaths, c.promptPaths[method]}}
 	case collectionInterface + ".SearchItems":
-		return &godbus.Call{Body: []interface{}{c.foundItems}}
+		return &godbus.Call{Body: []any{c.foundItems}}
 	case serviceInterface + ".OpenSession":
-		return &godbus.Call{Body: []interface{}{godbus.MakeVariant(""), godbus.ObjectPath("/session")}}
+		return &godbus.Call{Body: []any{godbus.MakeVariant(""), godbus.ObjectPath("/session")}}
 	case itemInterface + ".GetSecret":
-		return &godbus.Call{Body: []interface{}{secretValue{Value: c.storedValue}}}
+		return &godbus.Call{Body: []any{secretValue{Value: c.storedValue}}}
 	case collectionInterface + ".CreateItem":
 		c.setProperties = args[0].(map[string]godbus.Variant)
 		c.createdSecret = args[1].(secretValue)
-		return &godbus.Call{Body: []interface{}{godbus.ObjectPath("/item"), c.promptPaths[method]}}
+		return &godbus.Call{Body: []any{godbus.ObjectPath("/item"), c.promptPaths[method]}}
 	case itemInterface + ".Delete":
-		return &godbus.Call{Body: []interface{}{c.promptPaths[method]}}
+		return &godbus.Call{Body: []any{c.promptPaths[method]}}
 	case promptInterface + ".Prompt":
 		if c.promptSignal != nil {
 			c.signalChannel <- c.promptSignal
@@ -466,7 +466,7 @@ func TestPrompt(t *testing.T) {
 		connection := newTestConnection()
 		connection.promptSignal = &godbus.Signal{
 			Name: promptInterface + ".Completed",
-			Body: []interface{}{false, godbus.MakeVariant("")},
+			Body: []any{false, godbus.MakeVariant("")},
 		}
 		client := &client{connection: connection}
 		if err := client.handlePrompt(ctx, prompt); err != nil {
@@ -522,7 +522,7 @@ func TestPrompt(t *testing.T) {
 					_ context.Context,
 					_ godbus.ObjectPath,
 					_ string,
-					_ ...interface{},
+					_ ...any,
 				) *godbus.Call {
 					close(connection.signalChannel)
 					return &godbus.Call{}
@@ -536,7 +536,7 @@ func TestPrompt(t *testing.T) {
 			configure: func(connection *testConnection) context.Context {
 				connection.promptSignal = &godbus.Signal{
 					Name: promptInterface + ".Completed",
-					Body: []interface{}{string("false"), godbus.MakeVariant("")},
+					Body: []any{string("false"), godbus.MakeVariant("")},
 				}
 				return ctx
 			},
@@ -547,7 +547,7 @@ func TestPrompt(t *testing.T) {
 			configure: func(connection *testConnection) context.Context {
 				connection.promptSignal = &godbus.Signal{
 					Name: promptInterface + ".Completed",
-					Body: []interface{}{true, godbus.MakeVariant("")},
+					Body: []any{true, godbus.MakeVariant("")},
 				}
 				return ctx
 			},
@@ -601,7 +601,7 @@ func TestOperationPromptPaths(t *testing.T) {
 			connection.promptPaths[test.method] = "/prompt"
 			connection.promptSignal = &godbus.Signal{
 				Name: promptInterface + ".Completed",
-				Body: []interface{}{false, godbus.MakeVariant("")},
+				Body: []any{false, godbus.MakeVariant("")},
 			}
 			if err := test.call(testConnector{connection: connection}); err != nil {
 				t.Fatalf("operation error = %v", err)

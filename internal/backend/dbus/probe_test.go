@@ -15,14 +15,14 @@ type probeBusObject struct {
 	call *godbus.Call
 }
 
-func (o *probeBusObject) Call(string, godbus.Flags, ...interface{}) *godbus.Call { return o.call }
-func (o *probeBusObject) CallWithContext(context.Context, string, godbus.Flags, ...interface{}) *godbus.Call {
+func (o *probeBusObject) Call(string, godbus.Flags, ...any) *godbus.Call { return o.call }
+func (o *probeBusObject) CallWithContext(context.Context, string, godbus.Flags, ...any) *godbus.Call {
 	return o.call
 }
-func (o *probeBusObject) Go(string, godbus.Flags, chan *godbus.Call, ...interface{}) *godbus.Call {
+func (o *probeBusObject) Go(string, godbus.Flags, chan *godbus.Call, ...any) *godbus.Call {
 	return o.call
 }
-func (o *probeBusObject) GoWithContext(context.Context, string, godbus.Flags, chan *godbus.Call, ...interface{}) *godbus.Call {
+func (o *probeBusObject) GoWithContext(context.Context, string, godbus.Flags, chan *godbus.Call, ...any) *godbus.Call {
 	return o.call
 }
 func (o *probeBusObject) AddMatchSignal(string, string, ...godbus.MatchOption) *godbus.Call {
@@ -32,8 +32,8 @@ func (o *probeBusObject) RemoveMatchSignal(string, string, ...godbus.MatchOption
 	return o.call
 }
 func (*probeBusObject) GetProperty(string) (godbus.Variant, error) { return godbus.Variant{}, nil }
-func (*probeBusObject) StoreProperty(string, interface{}) error    { return nil }
-func (*probeBusObject) SetProperty(string, interface{}) error      { return nil }
+func (*probeBusObject) StoreProperty(string, any) error            { return nil }
+func (*probeBusObject) SetProperty(string, any) error              { return nil }
 func (*probeBusObject) Destination() string                        { return serviceName }
 func (*probeBusObject) Path() godbus.ObjectPath                    { return servicePath }
 
@@ -255,7 +255,7 @@ func TestConnectSessionBus(t *testing.T) {
 func TestProbeSessionOperations(t *testing.T) {
 	ctx := context.Background()
 	t.Run("open", func(t *testing.T) {
-		object := &probeBusObject{call: &godbus.Call{Body: []interface{}{
+		object := &probeBusObject{call: &godbus.Call{Body: []any{
 			godbus.MakeVariant(""), godbus.ObjectPath("/session"),
 		}}}
 		session, err := openProbeSession(ctx, probeObjectProvider{object: object})

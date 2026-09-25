@@ -43,8 +43,7 @@ func backendError(ctx context.Context, operation string, err error) error {
 	}
 
 	category := contract.ErrBackendFailure
-	var busErr godbus.Error
-	if errors.As(err, &busErr) {
+	if busErr, ok := errors.AsType[godbus.Error](err); ok {
 		switch busErr.Name {
 		case "org.freedesktop.DBus.Error.ServiceUnknown",
 			"org.freedesktop.DBus.Error.NameHasNoOwner":

@@ -258,7 +258,7 @@ func (m mount) isDrvFS() bool {
 	if m.filesystem != "9p" {
 		return false
 	}
-	for _, option := range strings.Split(m.superOptions, ",") {
+	for option := range strings.SplitSeq(m.superOptions, ",") {
 		option = strings.ToLower(option)
 		if option == "aname=drvfs" || strings.HasPrefix(option, "aname=drvfs;") {
 			return true
